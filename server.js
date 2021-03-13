@@ -3,8 +3,9 @@ const path = require('path');
 const pg = require('pg');
 
 const { Pool } = require('pg');
-const connectionString = process.env.DATABASE_URL || "postgres://papai:Vitoria@localhost:5433/papai";
-const pool = new Pool({connectionString: connectionString});
+//const connectionString = process.env.DATABASE_URL || "postgres://papai:Vitoria@localhost:5433/papai";
+const connectionString = process.env.DATABASE_URL || "postgres://gbczdsokypniwz:092a1d25740fe968bc63b4315873510dd21cc0ad4dac65615596489aeca3abc9@ec2-54-89-49-242.compute-1.amazonaws.com:5432/d6btksl1k7f1ht";
+const pool = new Pool({connectionString: connectionString, ssl: { rejectUnauthorized: false }});
 
 const ejs = require('ejs');
 const { parse } = require('querystring');
@@ -34,7 +35,7 @@ const app=express();
 
   function getUsers(req, res){
     var id = req.query.id;
-    //console.log(id);
+    console.log(id);
     if (id){
       getUserfromDB(id, (error, result)=>{
         res.json(result[0]);

@@ -72,7 +72,7 @@ const app=express();
       //console.log(res.rows);
       callback(null, res.rows);
     });
-  }
+  } 
 
   function putUser(req, res){
     console.log(req.query);

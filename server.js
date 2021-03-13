@@ -47,7 +47,7 @@ const app=express();
   } 
 
   function getUserfromDB(id, callback){
-    var sql = 'SELECT * FROM Users WHERE id=$1::int';
+    var sql = 'SELECT * FROM users WHERE id=$1::int';
     var params = [id];
     pool.query(sql, params, (err, res)=>{
       if(err){
@@ -61,7 +61,7 @@ const app=express();
   }
 
   function getUsersfromDB(callback){
-    var sql = 'SELECT * FROM Users';
+    var sql = 'SELECT * FROM users';
     var params = [];
     pool.query(sql, params, (err, res)=>{
       if(err){

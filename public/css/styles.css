@@ -1,0 +1,52 @@
+body{
+  display: grid;
+  grid-template-rows: 50px 30px auto 30px;
+  height: 100vh;
+  background-color: lightgray;
+}
+
+header{
+  display: grid;
+  grid-template-columns: 50px auto;
+
+}
+
+header img{
+  width: 100%;
+}
+
+.tabs ul{
+  list-style: none;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0; margin: 10px 0;
+}
+
+.tabs ul button{
+  width: 100%;
+}
+
+section{
+  align-self: top;
+}
+
+section.loading:hover{cursor: wait;}
+
+div.table{
+  margin-top: 50px;
+  width: 80%;
+  margin-left: auto;
+  display: grid;
+  
+}
+div.table div{
+  border:solid 1px black;
+  padding: 3px;
+}
+div.table.user{
+  grid-template-columns: 100px 100px 50px;
+}
+
+footer{
+  background-color: blue;
+}

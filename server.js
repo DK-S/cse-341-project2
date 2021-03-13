@@ -44,7 +44,7 @@ const app=express();
         res.json(result);
       });
     }
-  }
+  } 
 
   function getUserfromDB(id, callback){
     var sql = 'SELECT * FROM Users WHERE id=$1::int';

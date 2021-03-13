@@ -20,7 +20,9 @@ function getUsers(){
         html += "<div>" + element.lastname + "</div>";
         html += "<div>";
         html += "<button onclick='addUser(" + element.id + ");'>Edit</button>";
-        html += "<button onclick='deleteUser(" + element.id + ");'>Delete</button>";
+        if (parseInt(element.id)>1){
+          html += "<button onclick='deleteUser(" + element.id + ");'>Delete</button>";  
+        }
         html += "</div>";
       });
       html += "</div>";

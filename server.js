@@ -102,16 +102,18 @@ const app=express();
   }
 
   function deleteUser(req, res){
-    var id= req.query.id;
+    var id= parseInt(req.query.id);
     if (id){
-      var sql = "DELETE FROM users WHERE id=$1::int";
-      var params = [id];
-      pool.query(sql,params, (err, res)=>{
-        if(err){
-          //callback(err, null)
-        }
-        //callback(null, res.rows);
-      });
+      if(id > 1){
+        var sql = "DELETE FROM users WHERE id=$1::int";
+        var params = [id];
+        pool.query(sql,params, (err, res)=>{
+          if(err){
+            //callback(err, null)
+          }
+          //callback(null, res.rows);
+        });
+      }
     }
   }
 

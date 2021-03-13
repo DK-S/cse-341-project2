@@ -73,7 +73,7 @@ const app=express();
       callback(null, res.rows);
     });
   } 
-
+ 
   function putUser(req, res){
     console.log(req.query);
     var id = req.query.id;

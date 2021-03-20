@@ -47,6 +47,10 @@ div.table.user{
   grid-template-columns: 100px 100px 50px;
 }
 
+div.table.library{
+  grid-template-columns: repeat(5, auto);
+}
+
 footer{
   background-color: blue;
 }

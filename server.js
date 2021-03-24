@@ -29,6 +29,9 @@ const app=express();
   app.post('/insertlibrary', library.insertLibrary);
   app.post('/updatelibrary', library.updateLibrary);
   app.post('/deletelibrary', library.deleteLibrary);
+  app.get('/getborrowers', user.getBorrowers);
+  app.post('/checkin', library.checkin);
+  app.post('/checkout', library.checkin);
 
 
   app.listen(PORT, () =>{console.log("Now listening on port: ", PORT);});

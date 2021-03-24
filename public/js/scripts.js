@@ -104,8 +104,13 @@ function deleteUser(id=0){
   getUsers();
 }
 
-function getSearchArea(){
+function populateMediaTypeSelect(id=0, search=true){
   const searchType = document.getElementById("searchType");
+  const mediatype = document.getElementById("mediatype");
+  var dd = searchType;
+  if (searchType){dd = searchType;}
+  if (mediatype){dd = mediatype;}
+  
   var html = "";
   fetch('getmediatypes', {method:'GET'})
   .then(res=>res.text())
@@ -115,9 +120,16 @@ function getSearchArea(){
     } catch(e){
       throw new Error(result);
     }
-    html += "<option value='0'>All</option>"
+    if (search){
+      html += "<option value='0'";
+      if (id == 0){html += " selected ";}
+      html += ">All</option>";
+    }
+    
     obj.forEach(element =>{
-      html += "<option value='" + element.id + "'>" + element.type + "</option>";
+      html += "<option value='" + element.id + "'";
+      if (element.id == id){html += " selected ";}
+      html += ">" + element.type + "</option>";
     });
     
   })
@@ -125,14 +137,25 @@ function getSearchArea(){
     alert('catch '+error);
   })
   .finally(()=>{
-    searchType.innerHTML = html;
+    dd.innerHTML = html;
   })
 }
 
-function getLibrary(){
+function getLibrary(search='', mediatypeid=0){
   const libraryTable = document.getElementById('libraryTable');
   var html = "";  
-  fetch('getlibrary', {method:'GET'})
+  var url = 'getlibrary';
+  if (search != '' || mediatypeid > 0){
+    if (search != '' && mediatypeid > 0){
+      url += '?search=' + search;
+      url += '&mediatypeid='+mediatypeid;
+    }else if (search != ''){
+      url += '?search=' + search;
+    }else{
+      url += '?mediatypeid='+mediatypeid;
+    }
+  }
+  fetch(url, {method:'GET'})
   .then(res=>res.text())
   .then((result) =>{
     try{
@@ -154,8 +177,8 @@ function getLibrary(){
       html += "<div>" + element.location + "</div>";
       html += "<div>" + element.upc + "</div>";
       html += "<div>" + element.type + "</div>";
-      html += "<div>"+element.id;
-      html += "<button onclick='editLibrary(" + element.id + ");'>Edit</button>";
+      html += "<div>";
+      html += "<button onclick='getAddLibraryForm(" + element.id + ");'>Edit</button>";
       html += "<button onclick='deleteLibrary(" + element.id + ");'>Delete</button>";  
       html += "</div>";
     });
@@ -169,6 +192,12 @@ function getLibrary(){
   })
 }
 
+function searchLibrary(){
+  const searchString = document.getElementById('searchString');
+  const searchType = document.getElementById('searchType');
+  getLibrary(searchString.value, searchType.value);
+}
+
 function getLibraryView(){
   //Done: setup the base layer then call the sub layers
   //getSearchArea
@@ -179,7 +208,7 @@ function getLibraryView(){
   
   //search section
   var html = "<div class='search'>";
-  html += "<label for='searchString'>Search: <input type='text' name='searchString'></label>";
+  html += "<label for='searchString'>Search: <input id='searchString' type='text' name='searchString'></label>";
   html += "<label for='searchType'>Search: ";
   html += "<select id='searchType' name='searchType'>";
   html += "<option value='0'>Loading ...</option>";
@@ -195,12 +224,12 @@ function getLibraryView(){
 
   //add a button for adding to the library
   html += "<div>";
-  html += "<button onclick='addLibrary();'>Add to Library</button>";
+  html += "<button onclick='getAddLibraryForm(0);'>Add to Library</button>";
   html += "</div>";
   mainSection.innerHTML = html;
   mainSection.classList.remove('loading');
   
-  getSearchArea();
+  populateMediaTypeSelect();
   getLibrary();
 }
 
@@ -214,12 +243,199 @@ function deleteLibrary(id=0){
   getLibrary();
 }
 
-//TODO: create these functions
+function populateLibraryForm(id, callback){
+  const title = document.getElementById("title");
+  const location = document.getElementById("location");
+  const upc = document.getElementById("upc");
+  const private = document.getElementById("private");
+  const mediatype = document.getElementById("mediatype");
+  const borrowerid = document.getElementById("borrowerid");
+  const savebtn = document.getElementById("savebtn");
+  
+  var url = 'getlibrary?id=' + id;
+    fetch(url, {method:'GET'})
+    .then(res=>res.text())
+    .then((result) =>{
+      try{
+        var obj = JSON.parse(result);
+      } catch(e){
+        throw new Error(result);
+      }
+      title.value = obj.title;
+      location.value = obj.location;
+      upc.value = obj.upc;
+      private.checked = obj.checked;
+      savebtn.onclick = function (){saveLibrary(obj.id);}
+      populateMediaTypeSelect(obj.mediatypeid);
+      if(obj.borrowerid){
+        populateBorrowerSelect(obj.borrowerid);
+      }else{
+        populateBorrowerSelect(0);
+      }
 
-//searchLibrary();
-//addLibrary();
-//editLibrary(id)
-//getLibraryForm()
-//populateForm(id)
-//saveLibrary(id=0)
-//getCheckedOutView();
+    })
+    .catch((error) => {
+      console.log('error happened: '+error);
+    })
+    .finally(()=>{
+
+    })
+
+}
+
+function populateBorrowerSelect(id=0){
+  const borrowerid = document.getElementById("borrowerid");
+  var dd = borrowerid;
+  if (borrowerid){dd = borrowerid;}
+  
+  var html = "";
+  fetch('getborrowers', {method:'GET'})
+  .then(res=>res.text())
+  .then((result) =>{
+    try{
+      var obj = JSON.parse(result);
+    } catch(e){
+      throw new Error(result);
+    }
+    html += "<option value='0'";
+    if (id == 0){html += " selected ";}
+    html += ">Select</option>";
+    obj.forEach(element =>{
+      html += "<option value='" + element.id + "'";
+      if (element.id == id){html += " selected ";}
+      html += ">" + element.firstname + " " + element.lastname + "</option>";
+    });
+    
+  })
+  .catch((error) => {
+    alert('catch asmhfljaskdh'+error);
+  })
+  .finally(()=>{
+    dd.innerHTML = html;
+  })
+}
+
+function getAddLibraryForm(id=0){
+  const mainSection = document.getElementById('main');
+  mainSection.classList.add('loading');
+
+  var html = "<label for='title'>Title: <input id='title' type='text' name='title'></label>";
+  html += "<label for='location'>Location: <input id='location' type='text' name='location'></label>";
+  html += "<label for='upc'>UPC: <input id='upc' type='text' name='upc'></label>";
+  html += "<label for='private'>Private: <input id='private' type='checkbox' name='private'></label>";
+  html += "<label for='mediatype'>Media Type: <select id='mediatype' name='mediatype'>"; 
+  html += "<option value='0'>Loading ...</option>";
+  html += "</select></label>";
+  html += "<label for='borrowerid'>Borrowed By: <select id='borrowerid' name='borrowerid'>";
+  html += "<option value='0'>Loading ...</option>";
+  html += "</select></label>";
+  
+  html += "<button id='savebtn' onclick='saveLibrary(0);'>Save</button>";
+
+  mainSection.innerHTML = html;
+  mainSection.classList.remove('loading');
+
+  
+  if (id==0){
+    //keep blank values
+    populateMediaTypeSelect(0, false);
+    populateBorrowerSelect(0);
+  } else {
+    populateLibraryForm(id);
+  }
+}
+
+function saveLibrary(id=0){
+  const title = document.getElementById("title");
+  const location = document.getElementById("location");
+  const upc = document.getElementById("upc");
+  const private = document.getElementById("private");
+  const mediatype = document.getElementById("mediatype");
+  const borrowerid = document.getElementById("borrowerid");
+  if(id ==0){
+    var url = 'insertlibrary?title=' + title.value;
+    url += '&location=' + location.value;
+    url += '&upc=' + upc.value;
+    url += '&private=' + private.checked;
+    url += '&mediatypeid=' + mediatype.value;
+    url += '&borrowerid=' + borrowerid.value;
+  }else{
+    var url ='updatelibrary?id='+id;
+    url += '&title=' + title.value;
+    url += '&location=' + location.value;
+    url += '&upc=' + upc.value;
+    url += '&private=' + private.checked;
+    url += '&mediatypeid=' + mediatype.value;
+    url += '&borrowerid=' + borrowerid.value;
+  }
+
+  fetch(url, {method:'POST'})
+  
+  getLibraryView();
+}
+
+function getCheckedOutView(){
+  const mainSection = document.getElementById('main');
+  mainSection.classList.add('loading');
+  var html = '';
+  //table section
+  html += "<div id='libraryTable' class='table library'>";
+  html += "Loading...";
+  html += "</div>";
+  
+  mainSection.innerHTML = html;
+  mainSection.classList.remove('loading');
+
+  getCheckedoutLibrary();
+}
+
+function getCheckedoutLibrary(){
+  var url='getlibrary?checkedout=true';
+  var html = '';
+  fetch(url, {method:'GET'})
+  .then(res=>res.text())
+  .then((result) =>{
+    try{
+      var obj = JSON.parse(result);
+    } catch(e){
+      throw new Error(result);
+    }
+
+    //setup header row
+    html += "<div>Title</div>";
+    html += "<div>Borrower</div>";
+    html += "<div>UPC</div>";
+    html += "<div>Media Type</div>";
+    html += "<div></div>";
+
+    //populate the table
+    obj.forEach(element => {
+      html += "<div>" + element.title + "</div>";
+      html += "<div>" + element.firstname + " " + element.lastname + "</div>";
+      html += "<div>" + element.upc + "</div>";
+      html += "<div>" + element.type + "</div>";
+      html += "<div>";
+      html += "<button onclick='checkin(" + element.id + ");'>Checkin</button>";
+      html += "</div>";
+    });
+
+  })
+  .catch((error) => {
+    alert(error);
+  })
+  .finally(()=>{
+    libraryTable.innerHTML = html;
+  })
+
+}
+
+function checkin(id){
+  if (id==0){
+    console.log('cannot update: ', id);
+  } else {
+    var url = 'checkin?id=' + id;
+    fetch(url, {method:'POST'})
+  }
+  getCheckedoutLibrary();
+}
+

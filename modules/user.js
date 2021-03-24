@@ -14,6 +14,53 @@ function getUsers(req, res){
   }
 } 
 
+function getBorrowers(req, res){
+  var id = req.query.id;
+  console.log("getting user " + id + " from the db");
+  if (id){
+    getBorrowerfromDB(id, (error, result)=>{
+      res.json(result[0]);
+    });
+  } else {
+    getBorrowersfromDB((error, result)=>{
+      res.json(result);
+    });
+  }
+} 
+
+function getBorrowerfromDB(id, callback){
+  var sql = 'SELECT * FROM users WHERE borrowerid=$1::int';
+  var params = [id];
+  db.pool.query(sql, params, (err, res)=>{
+    if(err){
+      console.log("Error in look up");
+      console.log(err);
+      callback(err, null);
+    } 
+    if(res.rows){
+      callback(null, res.rows);
+    }else{
+      callback(err, null);
+    }
+    //console.log(res.rows);
+    //callback(null, res.rows);
+  });
+}
+
+function getBorrowersfromDB(callback){
+  var sql = 'SELECT * FROM users WHERE id <> $1::int';
+  var params = [1];
+  db.pool.query(sql, params, (err, res)=>{
+    if(err){
+      console.log("Error in look up");
+      console.log(err);
+      callback(err, null);
+    } 
+    //console.log(res.rows);
+    callback(null, res.rows);
+  });
+}
+
 function getUserfromDB(id, callback){
   var sql = 'SELECT * FROM users WHERE id=$1::int';
   var params = [id];
@@ -92,5 +139,6 @@ function deleteUser(req, res){
 module.exports = {
   getUsers: getUsers,
   putUser: putUser,
-  deleteUser: deleteUser
+  deleteUser: deleteUser,
+  getBorrowers: getBorrowers
 }

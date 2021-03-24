@@ -63,23 +63,33 @@ const db = require('./db');
     var search = req.query.search;
     var checkedout = req.query.checkedout;
     var mediatypeid = req.query.mediatypeid;
+    
+    console.log("getting library from the db");
 
-    console.log("getting library " + id + " from the db");
     if (id || search || checkedout || mediatypeid) {
-      if (id) {
+      if (search != '' && mediatypeid > 0){
+        console.log("Looking for both search and type");
+        getFilteredLibrary(search, mediatypeid, (error, result)=>{
+          res.json(result);
+        });
+      }else if (id) {
+        console.log("Looking for id");
         getLibraryByID(id, (error, result)=>{
           res.json(result[0]);
         });
-      }else if (search){
-        getFilteredLibrary(search, (error, result)=>{
+      }else if (search && search != ''){
+        console.log("Looking for search");
+        getFilteredLibrary(search, 0, (error, result)=>{
           res.json(result);
         });
       }else if (checkedout){
+        console.log("Looking for checked out");
         getCheckedoutItems((error, result)=>{
           res.json(result);
         });
       }else if (mediatypeid){
-        getLibraryByMedia(mediatypeid, (error, result)=>{
+        console.log("Looking for type");
+        getFilteredLibrary('', mediatypeid, (error, result)=>{
           res.json(result);
         });
       }else {
@@ -94,13 +104,33 @@ const db = require('./db');
   }
 
   function getAllLibraries(callback){
-    var sql = 'SELECT library.id as id';
-    sql += ', library.title';
-    sql += ', library.upc';
-    sql += ', library.location';
-    sql += ', mediatypes.type';
-    sql += ' FROM library inner join mediatypes on mediatypes.id = library.mediatypeid';
+    var sql = getLibrarySQL();
+    sql += ' ORDER BY title';
     var params = [];
+    queryLibrary(sql, params, (err, res)=>{
+      callback(err, res);
+    });
+  }
+
+  function getLibrarySQL(){
+    var sql = 'SELECT library.id as id';
+    sql += ', library.upc';
+    sql += ', library.title';
+    sql += ', library.location';
+    sql += ', library.private';
+    sql += ', library.mediatypeid';
+    sql += ', library.ownerid';
+    sql += ', library.borrowerid';
+    sql += ', mediatypes.type';
+    sql += ', borrower.firstname';
+    sql += ', borrower.lastname';
+    sql += ' FROM library';
+    sql += ' inner join mediatypes on mediatypes.id = library.mediatypeid';
+    sql += ' left join users as borrower on borrower.id = library.borrowerid';
+    return sql;
+  }
+
+  function queryLibrary(sql, params, callback){
     db.pool.query(sql, params, (err, res)=>{
       if(err){
         console.log("Error in look up");
@@ -116,25 +146,34 @@ const db = require('./db');
   }
 
   function getLibraryByID(id, callback){
-    var sql = 'SELECT * FROM library inner join mediatypes on mediatypes.id = library.mediatypeid WHERE id=$1::int';
+    var sql = getLibrarySQL();
+    sql += ' WHERE library.id=$1::int';
+    sql += ' ORDER BY title';
     var params = [id];
-    db.pool.query(sql, params, (err, res)=>{
-      if(err){
-        console.log("Error in look up");
-        console.log(err);
-        callback(err, null);
-      } 
-      if(res.rows){
-        callback(null, res.rows);
-      }else{
-        callback(err, null);
-      }
+    queryLibrary(sql, params, (err, res)=>{
+      callback(err, res);
     });
   }
 
-  function getFilteredLibrary(search, callback){
-    var sql = "SELECT * FROM library inner join mediatypes on mediatypes.id = library.mediatypeid WHERE upc like '%'+$1::varchar(25)+'%' OR title like '%'+$1::varchar(50)+'%' OR location like '%'+$1::varchar(50)+'%' ";
-    var params = [searc];
+  function getFilteredLibrary(search='', mediatypeid=0, callback){
+    var sql = getLibrarySQL() + ' WHERE ';
+    if (search != '' && mediatypeid > 0){
+      console.log("Looking for " + search + " and " + mediatypeid);
+      sql += "(upc like concat('%',$1::varchar(50),'%') OR title like concat('%',$1::varchar(50),'%') OR location like concat('%',$1::varchar(50),'%') ) ";
+      sql += "and (mediatypeid=$2::int)";
+      var params = [search, mediatypeid]
+    }else if (search != ''){
+      console.log("Looking for " + search);
+      sql += "(upc like concat('%',$1::varchar(50),'%') OR title like concat('%',$1::varchar(50),'%') OR location like concat('%',$1::varchar(50),'%')) ";
+      var params = [search]
+    }else{
+      console.log("Looking for " + mediatypeid);
+      sql += "(mediatypeid=$1::int)";
+      var params = [mediatypeid]
+    }
+    console.log(sql, params);
+    //var sql = "SELECT * FROM library inner join mediatypes on mediatypes.id = library.mediatypeid WHERE upc like '%'+$1::varchar(25)+'%' OR title like '%'+$1::varchar(50)+'%' OR location like '%'+$1::varchar(50)+'%' ";
+    //var params = [searc];
     db.pool.query(sql, params, (err, res)=>{
       if(err){
         console.log("Error in look up");
@@ -150,7 +189,9 @@ const db = require('./db');
   }
 
   function getCheckedoutItems(callback){
-    var sql = 'SELECT * FROM library inner join mediatypes on mediatypes.id = library.mediatypeid WHERE borrowerid IS NOT NULL';
+    var sql = getLibrarySQL();
+    sql += ' WHERE borrowerid IS NOT NULL';
+    sql += ' ORDER BY title';
     var params = [];
     db.pool.query(sql, params, (err, res)=>{
       if(err){
@@ -219,7 +260,7 @@ const db = require('./db');
       sql += " WHERE id=$7"
       var params = [upc, title, location, private, typeid, ownerid, id];
     }
-    
+    console.log(sql, params);
     db.pool.query(sql, params, (err, res)=>{
       if(err){
         console.log(err);
@@ -245,17 +286,21 @@ const db = require('./db');
     var title = req.query.title;
     var location = req.query.location;
     var private = req.query.private;
-    var typeid = req.query.typeid;
+    var typeid = req.query.mediatypeid;
     var ownerid = req.query.ownerid;
     var borrowerid = req.query.borrowerid;
     if(!borrowerid){borrowerid=0;}
     if(!ownerid){ownerid=1;}
     if(upc && title && location && private && typeid){
+      console.log("going to save");
       insertLibraryInDB(upc, title, location, private, typeid, ownerid, borrowerid, (error, result)=>{
         console.log(result);
       });
+    } else {
+      console.log("found blank data cannot save");
     }
     res.end();
+    
   }
 
   function updateLibrary(req, res){
@@ -264,8 +309,9 @@ const db = require('./db');
     var title = req.query.title;
     var location = req.query.location;
     var private = req.query.private;
-    var typeid = req.query.typeid;
+    var typeid = req.query.mediatypeid;
     var ownerid = req.query.ownerid;
+    ownerid =1
     var borrowerid = req.query.borrowerid;
     updateLibraryInDB(id, upc, title, location, private, typeid, ownerid, borrowerid, (error, result)=>{
       console.log(result);
@@ -286,10 +332,45 @@ const db = require('./db');
     res.end();
   }
 
+  function checkinDB(id){
+    var sql = "UPDATE library SET borrowerid = NULL WHERE id=$1::int";
+    var params = [id];
+    db.pool.query(sql,params, (err, res)=>{
+      if(err){
+        console.log(err);
+      }else{
+        console.log(sql, params, res);
+      }
+    });
+  }
+
+  function checkoutDB(id, borrowerid){
+    var sql = "UPDATE library SET borrowerid = $1::int WHERE id=$2::int";
+    var params = [borrowerid, id];
+    db.pool.query(sql,params, (err, res)=>{
+      if(err){
+        console.log(err);
+      }else{
+        console.log(sql, params, res);
+      }
+    });
+  }
+  
+  function checkin(req, res){
+    var id = parseInt(req.query.id);
+    var borrowerid = parseInt(req.query.borrowerid);
+    if (borrowerid){
+      checkoutDB(id, borrowerid);
+    }else{
+      checkinDB(id);
+    }
+  }
+
   module.exports = {
     getMediaType: getMediaType,
     getLibrary: getLibrary,
     insertLibrary: insertLibrary,
     updateLibrary: updateLibrary,
-    deleteLibrary: deleteLibrary
+    deleteLibrary: deleteLibrary,
+    checkin: checkin
   }

@@ -1,3 +1,5 @@
+$(document).ready(getLibraryView);
+
 function getUsers(){
   const mainSection = document.getElementById('main');
   mainSection.classList.add('loading');
@@ -438,4 +440,5 @@ function checkin(id){
   }
   getCheckedoutLibrary();
 }
+
 

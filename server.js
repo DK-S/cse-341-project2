@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const pg = require('pg');
+const session = require('express-session');
 
 const ejs = require('ejs');
 const { parse } = require('querystring');
@@ -11,15 +12,40 @@ const library = require('./modules/library');
 
 const PORT = process.env.PORT || 5000;
 
+//middleware-- gets called evertime use(logreqest) is used and returns with the call to next
+const logRequest = (req, res, next)=>{
+  console.log(`Recieved a request for ${req.url}`);
+  next();
+}
+
+//another middleware
+const verifyLoggedin = (req, res, next) => {
+  //console.log(req.session.owner);
+  if (req.session.owner) {
+    next();
+  }else{
+    req.session.owner = 1; //hardcoded at this time but may end up using actual login with password later
+    next();
+    //res.status(401).json({error:"Not Logged In"});
+  }
+}
+
 const app=express();
 
   app.set("port", PORT);
   app.use(express.urlencoded());
   app.use(express.json());
   app.use(express.static(path.join(__dirname, 'public')));
+  app.use(session({
+    secret: 'super secret',
+    resave: false,
+    saveUninitialized: true
+  }));
+  app.use('/', verifyLoggedin);
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'ejs');
 
+  app.use(logRequest);
   app.get('/', (req, res)=> res.render('pages/index'));
   app.get('/getusers', user.getUsers);
   app.post('/putuser', user.putUser);

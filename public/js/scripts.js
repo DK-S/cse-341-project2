@@ -1,7 +1,22 @@
 $(document).ready(getLibraryView);
 
+function selectTab(number){
+  const tab = [document.querySelector(".tabs ul li:nth-child(1) button"),
+  document.querySelector(".tabs ul li:nth-child(2) button"),
+  document.querySelector(".tabs ul li:nth-child(3) button")]
+  tab.forEach(btn => {
+    btn.classList.remove('selected');
+  })
+  tab[number].classList.add('selected');
+}
+
+
 function getUsers(){
   const mainSection = document.getElementById('main');
+  selectTab(2);
+              
+
+
   mainSection.classList.add('loading');
   
   fetch('getusers', {method:'GET'})
@@ -47,10 +62,10 @@ function addUser(id=0){
   const mainSection = document.getElementById('main');
   mainSection.classList.add('loading');
   //buld the form here
-  var html = "<label for='fname'>First Name: <input id='fname' type='text' name='fname'></label>";
+  var html = "<div class='form'><label for='fname'>First Name: <input id='fname' type='text' name='fname'></label>";
   html += "<label for='lname'>Last Name: <input id='lname' type='text' name='lname'></label>";
   html += "<button onclick='saveUser(" + id + ");'>Save</button>";
-  
+  html += "</div>";
   mainSection.innerHTML = html;
   mainSection.classList.remove('loading');
 
@@ -191,6 +206,7 @@ function getLibrary(search='', mediatypeid=0){
   })
   .finally(()=>{
     libraryTable.innerHTML = html;
+    document.getElementById('main').classList.remove('loading');
   })
 }
 
@@ -207,7 +223,7 @@ function getLibraryView(){
 
   const mainSection = document.getElementById('main');
   mainSection.classList.add('loading');
-  
+  selectTab(0);
   //search section
   var html = "<div class='search'>";
   html += "<label for='searchString'>Search: <input id='searchString' type='text' name='searchString'></label>";
@@ -229,7 +245,7 @@ function getLibraryView(){
   html += "<button onclick='getAddLibraryForm(0);'>Add to Library</button>";
   html += "</div>";
   mainSection.innerHTML = html;
-  mainSection.classList.remove('loading');
+  //mainSection.classList.remove('loading');
   
   populateMediaTypeSelect();
   getLibrary();
@@ -310,7 +326,7 @@ function populateBorrowerSelect(id=0){
     
   })
   .catch((error) => {
-    alert('catch asmhfljaskdh'+error);
+    alert('catch '+error);
   })
   .finally(()=>{
     dd.innerHTML = html;
@@ -321,7 +337,7 @@ function getAddLibraryForm(id=0){
   const mainSection = document.getElementById('main');
   mainSection.classList.add('loading');
 
-  var html = "<label for='title'>Title: <input id='title' type='text' name='title'></label>";
+  var html = "<div class='form'><label for='title'>Title: <input id='title' type='text' name='title'></label>";
   html += "<label for='location'>Location: <input id='location' type='text' name='location'></label>";
   html += "<label for='upc'>UPC: <input id='upc' type='text' name='upc'></label>";
   html += "<label for='private'>Private: <input id='private' type='checkbox' name='private'></label>";
@@ -334,6 +350,7 @@ function getAddLibraryForm(id=0){
   
   html += "<button id='savebtn' onclick='saveLibrary(0);'>Save</button>";
 
+  html += "</div>";
   mainSection.innerHTML = html;
   mainSection.classList.remove('loading');
 
@@ -378,15 +395,17 @@ function saveLibrary(id=0){
 
 function getCheckedOutView(){
   const mainSection = document.getElementById('main');
+  selectTab(1);
   mainSection.classList.add('loading');
+  
   var html = '';
   //table section
-  html += "<div id='libraryTable' class='table library'>";
+  html += "<div id='libraryTable' class='table library borrower'>";
   html += "Loading...";
   html += "</div>";
   
   mainSection.innerHTML = html;
-  mainSection.classList.remove('loading');
+  //mainSection.classList.remove('loading');
 
   getCheckedoutLibrary();
 }
@@ -427,6 +446,7 @@ function getCheckedoutLibrary(){
   })
   .finally(()=>{
     libraryTable.innerHTML = html;
+    document.getElementById('main').classList.remove('loading');
   })
 
 }
